@@ -37,4 +37,4 @@ if __name__=="__main__":
     except Exception as e:
         app_exc=DocumentPortalException(e, sys)
         logger.error(app_exc)
-        raise app_exc
+        # raise app_exc
