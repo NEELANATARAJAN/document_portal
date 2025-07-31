@@ -27,7 +27,7 @@ class CustomLogger:
         # Configure logging for file + console
         file_handler = logging.FileHandler(self.log_file_path)
         print(f"\n\nname={name},\nfile:{self.log_file_path}\n\n")
-        file_handler.setLevel(logging.INFO)
+        # file_handler.setLevel(logging.INFO)
         # formatter=structlog.stdlib.ProcessorFormatter(
         #     processor=structlog.dev.ConsoleRenderer(),
         #     foreign_pre_chain=[
@@ -66,14 +66,45 @@ class CustomLogger:
                 structlog.processors.TimeStamper(fmt="iso", utc=True, key="timestamp"),
                 structlog.processors.add_log_level,
                 structlog.processors.EventRenamer(to="event"),
-                structlog.processors.JSONRenderer()
+                structlog.processors.StackInfoRenderer(),
+                structlog.processors.format_exc_info,
+                structlog.processors.UnicodeDecoder(),
+                structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
             ],
+            wrapper_class=structlog.stdlib.BoundLogger,
             logger_factory=structlog.stdlib.LoggerFactory(),
             cache_logger_on_first_use=True
         )
+        self.logger = structlog.get_logger(logger_name)
 
-        return structlog.get_logger(logger_name)
+        return self.logger
 
+    def info(self, event, **kwargs):
+        """Logs an informational message."""
+        self.logger.info(event, **kwargs)
+
+    def warning(self, event, **kwargs):
+        """Logs a warning message."""
+        self.logger.warning(event, **kwargs)
+
+    def error(self, event, **kwargs):
+        """Logs an error message."""
+        self.logger.error(event, **kwargs)
+
+    def debug(self, event, **kwargs):
+        """Logs a debug message."""
+        self.logger.debug(event, **kwargs)
+
+    def critical(self, event, **kwargs):
+        """Logs a critical message."""
+        self.logger.critical(event, **kwargs)
+
+    def exception(self, event, **kwargs):
+        """
+        Logs an error message with exception info.
+        This method automatically sets exc_info=True.
+        """
+        self.logger.exception(event, **kwargs)
 
 if __name__=="__main__":
     logger=CustomLogger().get_logger(__file__)

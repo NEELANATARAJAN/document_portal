@@ -23,6 +23,12 @@ class DocumentPortalException(Exception):
         """
             str dunder method formats the exception in readable format
         """
+        print(f"""
+        Error in [{self.file_name}] at line [{self.line_no}]
+        Message: {self.error_message}
+        Traceback:
+        {self.traceback_string}
+        """)
         return f"""
         Error in [{self.file_name}] at line [{self.line_no}]
         Message: {self.error_message}
@@ -36,5 +42,6 @@ if __name__=="__main__":
         print(a)
     except Exception as e:
         app_exc=DocumentPortalException(e, sys)
-        logger.error(app_exc)
+        print(f"app_exc:\n\n{app_exc}\n\n")
+        logger.exception(app_exc)
         # raise app_exc
