@@ -8,6 +8,7 @@ langchain_community
 pypdf
 faiss-cpu
 structlog
+frontend
 fitz
 PyMuPDF
 -e .
