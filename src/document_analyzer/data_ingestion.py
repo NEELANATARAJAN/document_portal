@@ -8,10 +8,10 @@ from logger.custom_logger1 import CustomLogger
 from exception.custom_exception import DocumentPortalException
 
 class DocumentHandler:
-    def __init__(self,data_dir=None,session_id=None):
+    def __init__(self,data_dir=None,session_id=None, log=None):
         try:
 
-            self.log=CustomLogger().get_logger(__name__)
+            self.log=log 
             self.data_dir=data_dir or os.getenv(
                 "DATA_STORAGE_PATH", 
                 os.path.join(os.getcwd(),"data","document_analysis"))
@@ -61,39 +61,6 @@ class DocumentHandler:
             self.log.error("Error while reading the PDF: {e}")
             raise DocumentPortalException("Error while reading the PDF", sys)
 
-if __name__=="__main__":
-    from pathlib import Path
-    from io import BytesIO
-    
-    pdf_path = "/Users/neeladnatarajan/DSProjects/LLMOps/hw/document_portal/document_portal/data/document_analysis/NIPS-2017-attention-is-all-you-need-Paper.pdf"
-    
-    class DummyFiles:
-        def __init__(self, file_path):
-            self.name = Path(file_path).name
-            self.file_path=file_path
-
-        def getbuffer(self):
-            return open(self.file_path, "rb").read()
-    
-    dummy_pdf = DummyFiles(pdf_path)
-    handler=DocumentHandler()
-    
-    try:
-        save_path=handler.save_pdf(dummy_pdf)
-        print(f"Saved path: {save_path}")
-
-        content = handler.read_pdf(save_path)
-
-        print("PDF Content:")
-        print(content[:500])
-        print("...")    
-    
-    except Exception as e:
-        print("Error in saving PDF", e)
-        raise DocumentPortalException("Error in saving PDF", sys)
-    
-
-    
 
 
 
