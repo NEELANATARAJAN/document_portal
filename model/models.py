@@ -12,10 +12,10 @@ class Metadata(BaseModel):
     PageCount: Union[int, str]
     SentimentTone: str
 
-class changeformat(BaseModel):
+class ChangeFormat(BaseModel):
     Page: str
     Changes : str
 
-class SummaryResponse(RootModel[list[changeformat]]):
+class SummaryResponse(RootModel[list[ChangeFormat]]):
     pass  
 

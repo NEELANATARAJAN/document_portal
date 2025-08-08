@@ -43,7 +43,7 @@ class ModelLoader:
         self.log.info("Loading LLM models...")
 
         # Set Default LLM provider in case of any issue
-        provider_key = os.getenv("LLM_PROVIDER", "openai")
+        provider_key = os.getenv("LLM_PROVIDER", "groq")
         self.log.info("Provider key...", type(provider_key), provider_key)
 
         if provider_key not in llm_block:
@@ -53,9 +53,9 @@ class ModelLoader:
         provider=llm_config.get("provider")
         model_name=llm_config.get("model_name")
         temperature=llm_config.get("temperature", 0.2)
-        # max_output_tokens=llm_config.get("max_output_tokens", 2048)
+#        max_output_tokens=llm_config.get("max_output_tokens", 2048)
 
-        self.log.info("Loading LLM: ", provider=provider, model_name=model_name, temperature=temperature) #, max_output_tokens=max_output_tokens)
+        self.log.info("Loading LLM: ", provider=provider, model_name=model_name, temperature=temperature) # max_output_tokens=max_output_tokens)
 
         if provider=="google":
             llm=ChatGoogleGenerativeAI(
@@ -68,7 +68,7 @@ class ModelLoader:
             llm=ChatGroq(
                 model=model_name,
                 temperature=temperature,
-                max_output_tokens=max_output_tokens
+                # max_output_tokens=max_output_tokens
             )
             return llm
         elif provider=="openai":

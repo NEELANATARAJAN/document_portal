@@ -21,7 +21,7 @@ class DocumentComparatorLLM:
         self.fixing_parser = OutputFixingParser.from_llm(parser=self.parser, llm=self.llm)
         self.prompt = PROMPT_REGISTRY['document_comparison']
         self.chain = self.prompt | self.llm | self.parser
-        self.log.info("DocumentComparatorLLM initialized with model, parser, prompt and chain.")
+        self.log.info("DocumentComparatorLLM initialized with model, parser, prompt and chain.", model=self.llm)
 
     def compare_documents(self, combined_docs: str) -> pd.DataFrame:
         try:
@@ -32,7 +32,7 @@ class DocumentComparatorLLM:
             self.log.info("Starting document comparison with inputs", inputs=inputs)
 
             response = self.chain.invoke(inputs)
-            self.log.info("Document comparison completed successfully.", response=response)
+            self.log.info("Document comparison completed successfully.", response_preview=str(response)[:200])
 
             return self._format_response(response)
         
