@@ -20,7 +20,7 @@ class DocumentComparatorLLM:
         self.parser = JsonOutputParser(pydantic_object=SummaryResponse)
         self.fixing_parser = OutputFixingParser.from_llm(parser=self.parser, llm=self.llm)
         self.prompt = PROMPT_REGISTRY['document_comparison']
-        self.chain = self.prompt | self.llm | self.parser
+        self.chain = self.prompt | self.llm | self.fixing_parser
         self.log.info("DocumentComparatorLLM initialized with model, parser, prompt and chain.", model=self.llm)
 
     def compare_documents(self, combined_docs: str) -> pd.DataFrame:
