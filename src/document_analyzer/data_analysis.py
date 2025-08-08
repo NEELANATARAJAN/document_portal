@@ -18,7 +18,7 @@ class DocumentAnalyzer:
             self.llm = self.model_loader.load_llm()
             self.parser = JsonOutputParser(pydantic_object=Metadata)
             self.fixing_parser = OutputFixingParser.from_llm(parser=self.parser, llm=self.llm)
-            self.prompt = PROMPT_REGISTRY["document_analysis"]
+            self.prompt = PROMPT_REGISTRY[PromptType.DOCUMENT_ANALYSIS.value]
 
             self.log.info("DocumentAnalyzer successfully initialized.")
         except Exception as e:
