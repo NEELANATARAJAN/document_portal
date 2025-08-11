@@ -11,4 +11,7 @@ structlog
 frontend
 fitz
 PyMuPDF
+pandas
+langchain-core[tracing]
+streamlit
 -e .

@@ -24,5 +24,5 @@ class PromptType(str, Enum):
     DOCUMENT_ANALYSIS = "document_analysis"
     DOCUMENT_COMPARISON = "document_comparison"
     CONTEXTUAL_QUESTION = "contextual_question"
-    CONTEXTUAL_QA = "contextual_qa"
+    CONTEXTUAL_QA = "context_qa"
 
