@@ -6,6 +6,14 @@ from fastapi.templating import Jinja2Templates # type: ignore
 from typing import Dict, List, Any, Optional
 import os
 from pathlib import Path
+from src.document_analyzer.data_analysis import DocumentAnalyzer
+from src.document_ingestion.data_ingestion import (
+    DocumentHandler, 
+    DocumentComparator, 
+    ChatIngestor,
+    FaissManager)
+from src.document_compare.document_comparator import DocumentComparatorLLM
+from src.document_chat.retrieval import ConversationalRAG
 
 app = FastAPI(title="Document Portal API", version="0.1")
 

@@ -4,7 +4,7 @@ import openai
 from dotenv import load_dotenv
 from logger.custom_logger1 import CustomLogger
 from utils.config_loader import load_config
-from exception.custom_exception1 import DocumentPortalException
+from exception.custom_exception_archive import DocumentPortalException
 
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
