@@ -105,7 +105,7 @@ class ChatIngestor:
             self.session_id = session_id or _session_id()
 
             self.temp_base = Path(temp_base); self.temp_base.mkdir(parents=True, exist_ok=True)
-            self.faiss_base = Path(faiss_base); self.faiss_base.mkdir(parents=Truem exist_ok=True)
+            self.faiss_base = Path(faiss_base); self.faiss_base.mkdir(parents=True, exist_ok=True)
 
             self.temp_dir = self._resolve(self.temp_base)
             self.faiss_dir = self._resolve(self.faiss_base)
