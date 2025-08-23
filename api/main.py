@@ -15,6 +15,12 @@ from src.document_ingestion.data_ingestion import (
 from src.document_compare.document_comparator import DocumentComparatorLLM
 from src.document_chat.retrieval import ConversationalRAG
 from exception.custom_exception import DocumentPortalException
+from utils.document_ops import read_pdf_via_handler
+from logger import GLOBAL_LOGGER as log
+
+FAISS_BASE = os.getenv("FAISS_BASE", "faiss_index")
+UPLOAD_BASE = os.getenv("UPLOAD_BASE", "data")
+FAISS_INDEX_NAME = os.getenv("FAISS_INDEX_NAME", "index")
 
 app = FastAPI(title="Document Portal API", version="0.1")
 
@@ -44,27 +50,31 @@ app.add_middleware(
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    log.info("Serving UI homepage")
+    resp = templates.TemplateResponse("index.html", {"request": request})
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 @app.get("/health")
 def health() -> Dict[str, str]:
+    log.info("Health Check passed.")
     return {"status": "ok", "service": "document-portal"}
 
 class FastAPIFileAdapter:
+    """Adapt FastAPI UploadFile -> .name + .getbuffer() API"""
     def __init__(self, uf: UploadFile):
         self._uf = uf
         self.name = uf.filename
-    def get_buffer(self) -> bytes:
+    def getbuffer(self) -> bytes:
         self._uf.file.seek(0)
         return self._uf.file.read()
-
 
 @app.post("/analyze")
 async def analyze_document(file:UploadFile = File(...)) -> Any:
     try:
         dh = DocumentHandler()
         save_path=dh.save_pdf(FastAPIFileAdapter(file))
-        text = _read_pdf_via_handler(dh, save_path)
+        text = read_pdf_via_handler(dh, save_path)
 
         analyzer = DocumentAnalyzer()
 
@@ -80,7 +90,7 @@ async def analyze_document(file:UploadFile = File(...)) -> Any:
 async def compare_document(reference: UploadFile=File(...), actual: UploadFile=File(...)) -> Any:
     try:
         dc = DocumentComparator()
-        ref_path, actual_path = dc.save_uploaded_files(FastAPIFileAdapter(reference), FastAPIFileAdapter(actual))
+        ref_path, actual_path = dc.save_upload_files(FastAPIFileAdapter(reference), FastAPIFileAdapter(actual))
         _ = ref_path, actual_path
         combined_text = dc.combine_documents()
         comp = DocumentComparatorLLM()
@@ -102,6 +112,7 @@ async def chat_build_index(
     k: int = Form(5),
 ) -> Any:
     try:
+        log.info(f"Indexing chat session. Session ID: {session_id}, Files: {[f.filename for f in files]}")
         wrapped = [FastAPIFileAdapter(f) for f in files]
         ci = ChatIngestor(
             temp_base=UPLOAD_BASE,
@@ -110,6 +121,7 @@ async def chat_build_index(
             session_id=session_id or None,
         )
         ci.build_retriever(wrapped, chunk_size=chunk_size, chunk_overlap=chunk_overlap, k=k)
+        log.info(f"Index created successfully for session: {ci.session_id}")
         return {"session_id": ci.session_id, "k": k, "use_session_dirs": use_session_dirs}
     
     except HTTPException:
@@ -125,17 +137,18 @@ async def chat_query(
     k: int = Form(5),
 ):
     try:
+        log.info(f"Received chat query: '{question}' | session: {session_id}")
         if use_session_dirs and not session_id:
             raise HTTPException(status_code=400, detail="session_id is required when use_session_dirs is True")
         
         # Prepare FAISS Index
-        index_dir = os.path.join(FAISS_BASE, session_id) if use_session_dirs else FAISS_BASE
+        index_dir = os.path.join(FAISS_BASE, session_id) if use_session_dirs else FAISS_BASE # type: ignore
         if not os.path.isdir(index_dir):
-            raise HTTPException(status_code=404, detail=f"FAISS Index not found in {FAISS_BASE}")
+            raise HTTPException(status_code=404, detail=f"FAISS Index not found in {index_dir}")
         
         # Initialize LCEL-style RAG Pipeline
         rag = ConversationalRAG(session_id=session_id)
-        rag.load_retriever_from_faiss(index_dir)
+        rag.load_retriever_from_faiss(index_dir, k=k, index_name=FAISS_INDEX_NAME)
 
         # Optional: for now we will pass empty chat history
         response = rag.invoke(question, chat_history=[])

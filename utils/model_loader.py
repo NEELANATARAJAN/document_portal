@@ -26,7 +26,7 @@ class ModelLoader:
         if missing:
             log.error("Missing environment variables", missing_vars=missing)
             raise DocumentPortalException("Missing environment variables",sys)
-        log.info("Environmental variables validated...", available_vars=[k for k in self.api_keys if self.api_keys])
+        log.info("Environmental variables validated...", available_vars=[k for k in self.api_keys if self.api_keys[k]])
 
     def load_embeddings(self):
         try:
@@ -42,12 +42,13 @@ class ModelLoader:
         log.info("Loading LLM models...")
 
         # Set Default LLM provider in case of any issue
-        provider_key = os.getenv("LLM_PROVIDER", "groq")
-        log.info("Provider key...", type(provider_key), provider_key)
-
+        log.info("LLM block is ", llm_block=llm_block)
+        provider_key = os.getenv("LLM_PROVIDER", "google")
+        log.info("Provider key is ", provider_key=provider_key)
         if provider_key not in llm_block:
-            log.error("LLM provider not in LLM block in config...", provider_key=provider_key)
+            log.error("LLM provider not found in config", provider_key=provider_key)
             raise ValueError(f"Provider '{provider_key}' not found in config")
+
         llm_config = llm_block[provider_key]
         provider=llm_config.get("provider")
         model_name=llm_config.get("model_name")
@@ -60,7 +61,7 @@ class ModelLoader:
             llm=ChatGoogleGenerativeAI(
                 model=model_name,
                 temperature=temperature,
-                max_output_tokens=max_output_tokens
+                # max_output_tokens=max_output_tokens
             )
             return llm
         elif provider=="groq":

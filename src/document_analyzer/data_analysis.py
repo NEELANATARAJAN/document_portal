@@ -10,7 +10,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain.output_parsers import OutputFixingParser
 
 class DocumentAnalyzer:
-    def __init__(self, log=None):
+    def __init__(self):
         try:
 
             self.model_loader = ModelLoader()

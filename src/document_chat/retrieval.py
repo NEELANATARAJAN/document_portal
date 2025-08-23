@@ -2,7 +2,7 @@ import sys
 import os
 
 from operator import itemgetter
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -15,37 +15,52 @@ from prompt.prompt_library import PROMPT_REGISTRY
 from model.models import PromptType
 
 class ConversationalRAG:
-    def __init__(self, log, session_id:str, retriever=None):
+    def __init__(self, session_id:Optional[str], retriever=None):
         try:
-            self.log = log
             self.session_id = session_id
+            log.info(f"Retriever sent from api is {retriever}")
             self.llm = self._load_llm()
             self.contextualize_prompt : ChatPromptTemplate = PROMPT_REGISTRY[PromptType.CONTEXTUAL_QUESTION.value]
             self.qa_prompt : ChatPromptTemplate = PROMPT_REGISTRY[PromptType.CONTEXTUAL_QA.value]
-            if retriever is None:
-                log.error("Retriever cannot be None")
-                raise DocumentPortalException("Retriever cannot be None")
             self.retriever = retriever
-            self._build_lcel_chain()
+            self.chain = None
+            if self.retriever is not None:
+                self._build_lcel_chain()
+
             log.info("ConversationRAG initialized", session_id=self.session_id)
         except Exception as e:
             log.error(f"Failed to initialize ConversationalRAG {e}")
             raise DocumentPortalException("Failed to initialize ConversationalRAG ", sys)
 
-    def load_retriever_from_faiss(self, index_path:str):
+    def load_retriever_from_faiss(
+            self, 
+            index_path:str, 
+            k: int = 5, 
+            index_name:str = "index", 
+            search_type: str = "similarity",
+            search_kwargs: Optional[Dict[str, Any]] = None):
         try:
-            embeddings = ModelLoader().load_embeddings()
             if not os.path.isdir(index_path):
                 raise FileNotFoundError(f"FAISS index directory not found: {index_path}")
             
+            embeddings = ModelLoader().load_embeddings()
             vector_store = FAISS.load_local(
                 index_path,
                 embeddings,
+                index_name=index_name,
                 allow_dangerous_deserialization=True,
             )
+            if search_kwargs is None:
+                search_kwargs = {'k': k}
 
-            self.retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={'k': 5})
-            log.info("FAISS retriever loaded successfully", index_path=index_path, session_id=self.session_id)
+            self.retriever = vector_store.as_retriever(search_type=search_type, search_kwargs=search_kwargs)
+            self._build_lcel_chain()
+
+            log.info("FAISS retriever loaded successfully", 
+                     index_path=index_path, 
+                     index_name=index_name, 
+                     k=k,
+                     session_id=self.session_id)
             return self.retriever
 
         except Exception as e:
@@ -54,12 +69,17 @@ class ConversationalRAG:
 
     def invoke(self, user_input:str, chat_history:Optional[List[BaseMessage]]=None) -> str:
         try:
+            if self.chain is None:
+                raise DocumentPortalException(
+                    "RAG Chain not initialized. Call load_retriever_from_faiss() before invoke()", sys
+                )
+            
             chat_history = chat_history or []
             payload = {"input": user_input, "chat_history": chat_history}
             answer = self.chain.invoke(payload)
             if not answer:
                 log.warning("No answer generated", session_id=self.session_id, user_input=user_input)
-                return "No answer"
+                return "No answer generated"
             log.info("Chain invoked successfully", session_id=self.session_id, user_input=user_input, answer_preview=answer[:150])
             return answer
 
@@ -89,6 +109,9 @@ class ConversationalRAG:
     
     def _build_lcel_chain(self):
         try:
+            if self.retriever is None:
+                raise DocumentPortalException("No retriever set before building chain", sys)
+            
             question_rewriter = (
                 {"input": itemgetter("input"), "chat_history": itemgetter("chat_history")}
                 | self.contextualize_prompt
