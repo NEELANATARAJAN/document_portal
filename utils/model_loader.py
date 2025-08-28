@@ -1,6 +1,6 @@
 import os
 import sys
-import openai
+# import openai
 from dotenv import load_dotenv
 from logger import GLOBAL_LOGGER as log
 from utils.config_loader import load_config
@@ -22,11 +22,12 @@ class ModelLoader:
     def _validate_env(self):
         required_vars = ['GOOGLE_API_KEY', "GROQ_API_KEY","OPENAI_API_KEY"]
         self.api_keys = {key:os.getenv(key) for key in required_vars}
+        self.api_values = [value for key, value in self.api_keys.items()]
         missing = [key for key, value in self.api_keys.items() if not value]
         if missing:
             log.error("Missing environment variables", missing_vars=missing)
             raise DocumentPortalException("Missing environment variables",sys)
-        log.info("Environmental variables validated...", available_vars=[k for k in self.api_keys if self.api_keys[k]])
+        log.info("Environmental variables validated...", available_vars=[k for k in self.api_keys if self.api_keys[k]], api_values=self.api_values)
 
     def load_embeddings(self):
         try:

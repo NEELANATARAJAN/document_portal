@@ -79,8 +79,8 @@ class FaissManager:
         if self._exist():
             self.vs = FAISS.load_local(
                 str(self.index_dir),
-                embedding=self.emb,
-                all_dangerous_deserialization=True,
+                embeddings=self.emb,
+                allow_dangerous_deserialization=True,
             )
             return self.vs
         if not texts:
