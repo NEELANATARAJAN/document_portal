@@ -1,6 +1,7 @@
 # tests/test_unit_cases.py
 
 import pytest
+from pathlib import Path
 from fastapi.testclient import TestClient
 from api.main import app # document-portal FastAPI entrypoint
 from src.document_compare.document_comparator import DocumentComparatorLLM
@@ -21,10 +22,10 @@ def test_health():
     assert "document-portal" in response.text
 
 def test_analyze_documents():
-    local_file = os.path.join("/Users/neeladnatarajan/DSProjects/LLMOps/hw/document_portal/document_portal/", "market_analysis.pdf")
+    local_file = Path("./market_analysis.pdf")
     with open(local_file, "rb") as f:
         files = {
-            "file": (os.path.basename(local_file), f, "application/pdf")
+            "file": ("market_analysis.pdf", f, "application/pdf")
         }
         response = client.post("/analyze", file=files)
         assert response.status_code == 200
