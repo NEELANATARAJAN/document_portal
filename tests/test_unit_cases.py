@@ -25,7 +25,7 @@ def test_analyze_documents():
     local_file = Path("./market_analysis.pdf")
     with open(local_file, "rb") as f:
         files = {
-            "file": ("market_analysis.pdf", f, "application/pdf")
+            "file": ("market_analysis.pdf", f.read(), "application/pdf")
         }
         response = client.post("/analyze", file=files)
         assert response.status_code == 200
