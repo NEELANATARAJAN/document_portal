@@ -19,7 +19,6 @@ docx2txt==0.9
 ipykernel==6.30.0
 streamlit==1.47.1
 pytest==8.4.1
-io
 cfn-lint==1.39.0
 langchain_openai==0.3.28
 openai==1.98.0
