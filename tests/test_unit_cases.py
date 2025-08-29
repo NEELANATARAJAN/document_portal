@@ -31,7 +31,7 @@ def create_mock_pdf_file():
         pdf_content = f.read()
     
     # Return a BytesIO object which acts like a file
-    return io.BytesIO(pdf_content)
+    return BytesIO(pdf_content)
 
 def test_analyze_documents():
     mock_file = create_mock_pdf_file()
