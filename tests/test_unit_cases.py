@@ -21,16 +21,25 @@ def test_health():
     assert response.status_code == 200
     assert "document-portal" in response.text
 
-def test_analyze_documents():
+def create_mock_pdf_file():
+    """Creates a simple in-memory PDF file for testing."""
+    # A simple, valid PDF header as a byte string
+    pdf_header = b"market_analysis\n"
+    # Some mock content
     local_file = Path("./market_analysis.pdf")
-    with open(local_file, "rb") as f:
+    with open (local_file, "rb") as f:
         pdf_content = f.read()
+    
+    # Return a BytesIO object which acts like a file
+    return io.BytesIO(pdf_content)
 
-        # files = {
-        #     ("market_analysis.pdf", f.read(), "application/pdf")
-        # }
-        response = client.post("/analyze",content=pdf_content, headers={"Content-Type":"application/pdf"})
-        assert response.status_code == 200
+def test_analyze_documents():
+    mock_file = create_mock_pdf_file()
+    files_payload = {
+        "file": ("document.pdf", mock_file.read(), "application/pdf")
+        }
+    response = client.post("/analyze", files=files_payload)
+    assert response.status_code == 200
 
 
 
