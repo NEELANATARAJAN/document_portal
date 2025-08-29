@@ -24,10 +24,12 @@ def test_health():
 def test_analyze_documents():
     local_file = Path("./market_analysis.pdf")
     with open(local_file, "rb") as f:
-        files = {
-            "file": ("market_analysis.pdf", f.read(), "application/pdf")
-        }
-        response = client.post("/analyze", file=files)
+        pdf_content = f.read()
+
+        # files = {
+        #     ("market_analysis.pdf", f.read(), "application/pdf")
+        # }
+        response = client.post("/analyze",content=pdf_content, headers={"Content-Type":"application/pdf"})
         assert response.status_code == 200
 
 
