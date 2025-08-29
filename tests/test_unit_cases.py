@@ -21,14 +21,14 @@ def test_health():
     assert "document-portal" in response.text
 
 def test_analyze_documents():
-    local_file = os.path.join("/Users/neeladnatarajan/Documents/", "market_analysis.pdf")
+    local_file = os.path.join("/Users/neeladnatarajan/DSProjects/LLMOps/hw/document_portal/document_portal/", "market_analysis.pdf")
     with open(local_file, "rb") as f:
         files = {
             "file": (os.path.basename(local_file), f, "application/pdf")
         }
         response = client.post("/analyze", file=files)
         assert response.status_code == 200
-        
+
 
 
 # def test_analyze_document():
