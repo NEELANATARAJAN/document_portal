@@ -1,7 +1,7 @@
 name: CI/CD to ECS Fargate
 on:
   workflow_run:
-    workflows: ["Run Unit Tests"] # Match this name in your ci.yaml file
+    workflows: ["Run Unit Tests"]   # Match the name in your ci.yaml
     types:
       - completed
 env:
@@ -78,14 +78,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }} 
-      
-      - name: Deploy ECR stack (optional)
-        run: |
-          aws cloudformation deploy \
-            --template-file .github/workflows/template.yaml \
-            --stack-name ecr-repo-stack \
-            --region ${{ env.AWS_REGION }} \
-            --capabilities CAPABILITY_NAMED_IAM
       
       - name: Render Task Definition
         id: render-task
