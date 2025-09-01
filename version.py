@@ -17,7 +17,7 @@ packages = [
     "uvicorn",
     "python-multipart",
     "docx2txt",
-    "io"
+    "pypdf",
 ]
 
 for pkg in packages:
@@ -26,3 +26,4 @@ for pkg in packages:
         print(f"{pkg}=={version}")
     except importlib.metadata.PackageNotFoundError:
         print(f"{pkg} is not installed")
+        

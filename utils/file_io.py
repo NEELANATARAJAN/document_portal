@@ -1,15 +1,13 @@
+from __future__ import annotations
 import uuid
-import hashlib
-import shutil
 import re
 from pathlib import Path
-from datetime import datetime, timezone
-from typing import Iterable, List, Optional, Dict, Any
-from utils.model_loader import ModelLoader
-from logger.custom_logger import CustomLogger
+from datetime import datetime
 from zoneinfo import ZoneInfo
+from typing import Iterable, List
+from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import DocumentPortalException
-log = CustomLogger().get_logger(__name__)
+
 SUPPORTED_EXTENSIONS = {'.pdf', '.txt', '.docx'}
 
 def generate_session_id(prefix:str = "session") -> str:
@@ -17,6 +15,7 @@ def generate_session_id(prefix:str = "session") -> str:
     return f"{prefix}_{datetime.now(ist).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
 def save_uploaded_files(uploaded_files: Iterable, target_dir: Path) -> List[Path]:
+    """ Save uploaded files from app and return local paths """
     try:
         target_dir.mkdir(parents=True, exist_ok=True)
         saved: List[Path] = []

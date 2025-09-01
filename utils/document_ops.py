@@ -9,6 +9,9 @@ from exception.custom_exception import DocumentPortalException
 SUPPORTED_EXTENSIONS = {'.pdf', '.txt', '.docx'}
 
 def load_documents(paths: Iterable[Path]) -> List[Document]:
+    """
+    Loading documents according to extension based loaders
+    """
     docs: List[Document] = []
     try:
         for p in paths:
@@ -49,4 +52,15 @@ def read_pdf_via_handler(handler, path: str) -> str:
             return handler.read_(path)
     except Exception as e:
         raise RuntimeError("Document Handler has neigther read nor read_ method.")
+
+class FastAPIFileAdapter:
+    """ Adapt FastAPI UploadFile -> .name + .getbuffer() API"""
+    def __init__(self, uf: UploadFile):
+        self._uf = uf
+        self.name = uf.filename
+    def getbuffer(self) -> bytes:
+        self._uf.file.seek(0)
+        return self._uf.file.read()
+    
+    
     

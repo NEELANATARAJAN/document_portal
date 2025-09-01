@@ -7,13 +7,11 @@ import uuid
 import hashlib
 import shutil
 from pathlib import Path
-from datetime import datetime, timezone
 from typing import Iterable, List, Optional, Dict, Any
 
 import fitz # type: ignore
 from langchain.schema import Document # type: ignore
 from langchain_text_splitters import RecursiveCharacterTextSplitter # type: ignore
-from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader # type: ignore
 from langchain_community.vectorstores import FAISS # type: ignore
 
 from utils.model_loader import ModelLoader
@@ -27,6 +25,9 @@ SUPPORTED_EXTENSIONS = {'.pdf','.txt','.docx'}
 # FAISS Manager (create-or-load)
 
 class FaissManager:
+    """
+    FAISS vector database index is created, loaded and documents are added to vs
+    """
     def __init__(self, index_path: Path, model_loader: Optional[ModelLoader] =None):
         self.index_dir = Path(index_path)
         self.index_dir.mkdir(parents=True, exist_ok=True)
@@ -34,7 +35,7 @@ class FaissManager:
         self.meta_path = self.index_dir / "ingested_meta.json"
         self._meta : Dict[str: Any] = {"rows": {}}
 
-        if self.meta_path.exists:
+        if self.meta_path.exists():
             try:
                 self._meta = json.loads(self.meta_path.read_text(encoding="utf-8")) or {"rows": {}}
             except Exception:
@@ -44,7 +45,7 @@ class FaissManager:
         self.emb = self.model_loader.load_embeddings()
         self.vs : Optional[FAISS] = None
 
-    def _exist(self):
+    def _exist(self) -> bool:
         return (self.index_dir / "index.faiss").exists() or (self.index_dir / "index.pkl").exists() 
     
     @staticmethod
@@ -52,15 +53,19 @@ class FaissManager:
         src = md.get("source") or md.get("file_path")
         rid = md.get("row_id")
         if src is not None:
-            return f"{src}:{'' if rid is None else rid}"
+            return f"{src}::{'' if rid is None else rid}"
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
     def _save_meta(self):
         self.meta_path.write_text(json.dumps(self._meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def add_documents(self, docs: List[Document]):
+        """
+        New document is added in vectorstore
+        """
         if self.vs is None:
             raise RuntimeError("Call load_or_create before add_documents.")
+        
         new_docs: List[Document] = []
 
         for d in docs:
@@ -69,6 +74,7 @@ class FaissManager:
                 continue
             new_docs.append(d)
             self._meta["rows"][key] = True
+
         if new_docs:
             self.vs.add_documents(new_docs)
             self.vs.save_local(str(self.index_dir))
@@ -123,6 +129,7 @@ class ChatIngestor:
             d = base / self.session_id
             d.mkdir(parents=True, exist_ok=True)
             return d
+        return base
 
     def _split(self, docs: List[Document], chunk_size=1000, chunk_overlap=200) -> List[Document]:
         splitter = RecursiveCharacterTextSplitter(chunk_overlap=chunk_overlap, chunk_size=chunk_size)
@@ -142,6 +149,7 @@ class ChatIngestor:
             docs = load_documents(paths)
             if not docs:
                 raise ValueError("No valid documents uploaded")
+            
             chunks = self._split(docs, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
             fm = FaissManager(self.faiss_dir, self.model_loader)
 
@@ -165,6 +173,10 @@ class ChatIngestor:
 
 
 class DocumentHandler:
+    """
+    PDF save + read (page-wise) for analysis.
+    """
+
     def __init__(self, data_dir: Optional[str] = None, session_id: Optional[str] = None):
         
         self.data_dir = data_dir or os.getenv("DATA_STORAGE_PATH", os.path.join(os.getcwd(), "data", "document_analysis"))
@@ -205,13 +217,16 @@ class DocumentHandler:
             raise DocumentPortalException(f"Could not read PDF: {pdf_path}", e) from e
 
 class DocumentComparator:
+    """
+    Save, read & combine PDFs for comparison with session-based versioning.
+    """
     def __init__(self, base_dir: str = "data/document_compare", session_id: Optional[str] = None):
         
         self.base_dir = Path(base_dir)
-        self.session_id = session_id or generate_session_id("session")
+        self.session_id = session_id or generate_session_id()
         self.session_path = self.base_dir / self.session_id
         self.session_path.mkdir(parents=True, exist_ok=True)
-        log.info("DocumentComparator initialized", session_id=self.session_id, session_path=self.session_path)
+        log.info("DocumentComparator initialized",  session_path=self.session_path)
 
     def save_upload_files(self, reference_file, actual_file):
         try:

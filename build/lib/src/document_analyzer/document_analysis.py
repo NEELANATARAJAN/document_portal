@@ -1,6 +1,6 @@
 import os
 from utils.model_loader import ModelLoader
-from logger.custom_logger1 import CustomLogger
+from logger.custom_logger_archive import CustomLogger
 from exception.custom_exception import DocumentPortalException
 from model.models import *
 

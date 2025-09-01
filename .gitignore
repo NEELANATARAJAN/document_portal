@@ -1,12 +1,40 @@
-env
-.env
-hw_document_portal.egg-info
-venv/
+# Python cache & virtualenv
 __pycache__/
-logs/
-*.pyc
-test.py
-data/
+*.py[cod]
+*.so
+*.pyd
+*.pyo
+env/
+venv/
+*.egg-info/
+*.egg
+*.log
+
+# OS & editor files
+.DS_Store/
+.vscode/
+.idea/
+
+# Langchain-related
 faiss_index/
+*.faiss
+*.pkl
+
+# Data & archive
+data/
 archive/
-notebook/
+main_archive/
+*.pdf
+
+# Secrets & configs
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+
+# Build/Dist
+dist/
+build/
+hw_document_portal.egg-info/

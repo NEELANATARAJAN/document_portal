@@ -10,9 +10,12 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain.output_parsers import OutputFixingParser
 
 class DocumentAnalyzer:
+    """
+    Analyzes document using a pre-trained LLM model.
+    Automatically logs all actions and supports session-based organization.
+    """
     def __init__(self):
         try:
-
             self.model_loader = ModelLoader()
             self.llm = self.model_loader.load_llm()
             self.parser = JsonOutputParser(pydantic_object=Metadata)
@@ -26,6 +29,9 @@ class DocumentAnalyzer:
         
 
     def analyze_document(self, document_text:str)->dict:
+        """
+        Analyze a document's text and extract structured metadata & summary
+        """
         try:
             chain = self.prompt | self.llm | self.fixing_parser
             log.info("Metadata analysis chain initialized successfully...", chain=chain)

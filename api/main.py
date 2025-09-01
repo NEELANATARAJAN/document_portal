@@ -14,7 +14,6 @@ from src.document_ingestion.data_ingestion import (
     FaissManager)
 from src.document_compare.document_comparator import DocumentComparatorLLM
 from src.document_chat.retrieval import ConversationalRAG
-from exception.custom_exception import DocumentPortalException
 from utils.document_ops import read_pdf_via_handler
 from logger import GLOBAL_LOGGER as log
 
@@ -24,10 +23,10 @@ FAISS_INDEX_NAME = os.getenv("FAISS_INDEX_NAME", "index")
 
 app = FastAPI(title="Document Portal API", version="0.1")
 
-# BASE_DIR = Path(__file__).resolve().parent.parent
-BASE_DIR = current_dir = os.getcwd()
-app.mount("/static", StaticFiles(directory=str(os.path.join(BASE_DIR, "static"))), name="static")
-templates = Jinja2Templates(directory=str(os.path.join(BASE_DIR, "templates")))
+BASE_DIR = Path(__file__).resolve().parent.parent
+# BASE_DIR = current_dir = os.getcwd()
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 app.add_middleware(
@@ -72,6 +71,7 @@ class FastAPIFileAdapter:
 @app.post("/analyze")
 async def analyze_document(file:UploadFile = File(...)) -> Any:
     try:
+        log.info(f"Received file for analysis: {file.filename}")
         dh = DocumentHandler()
         save_path=dh.save_pdf(FastAPIFileAdapter(file))
         text = read_pdf_via_handler(dh, save_path)
@@ -79,27 +79,32 @@ async def analyze_document(file:UploadFile = File(...)) -> Any:
         analyzer = DocumentAnalyzer()
 
         result = analyzer.analyze_document(text)
+        log.info("Document Analysis complete.")
         return JSONResponse(content=result)
     
     except HTTPException:
         raise
     except Exception as e:
+        log.exception("Error during document analysis")
         raise HTTPException(status=500, detail=f"Analysis Failed: {e}")
 
 @app.post("/compare")
 async def compare_document(reference: UploadFile=File(...), actual: UploadFile=File(...)) -> Any:
     try:
+        log.info(f"Comparing files: {reference.filename} vs {actual.filename}")
         dc = DocumentComparator()
         ref_path, actual_path = dc.save_upload_files(FastAPIFileAdapter(reference), FastAPIFileAdapter(actual))
         _ = ref_path, actual_path
         combined_text = dc.combine_documents()
         comp = DocumentComparatorLLM()
         df = comp.compare_documents(combined_docs=combined_text)
+        log.info("Document Comparison completed.")
         return {"rows": df.to_dict(orient="records"), "session_id": dc.session_id}
     
     except HTTPException:
         raise
     except Exception as e:
+        log.exception("Comparison failed")
         raise HTTPException(status=500, detail=f"Compare documents Failed: {e}")
 
 @app.post("/chat/index")
@@ -127,6 +132,7 @@ async def chat_build_index(
     except HTTPException:
         raise
     except Exception as e:
+        log.exception("Chat index building failed")
         raise HTTPException(status=500, detail=f"Indexing Failed {e}")
 
 @app.post("/chat/query")
@@ -152,6 +158,7 @@ async def chat_query(
 
         # Optional: for now we will pass empty chat history
         response = rag.invoke(question, chat_history=[])
+        log.info("Chat query handled successfully")
 
         return {
             "answer": response,
@@ -162,5 +169,6 @@ async def chat_query(
     except HTTPException:
         raise
     except Exception as e:
+        log.info("Chat query failed.")
         raise HTTPException(status=500, detail=f"Chat Query failed : {e}")
 

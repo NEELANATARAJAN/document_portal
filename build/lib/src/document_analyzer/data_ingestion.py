@@ -2,7 +2,7 @@ import os
 import fitz
 import uuid
 from datetime import datetime
-from logger.custom_logger1 import CustomLogger
+from logger.custom_logger_archive import CustomLogger
 from exception.custom_exception import DocumentPortalException
 
 class DocumentHandler:

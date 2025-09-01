@@ -15,13 +15,22 @@ from prompt.prompt_library import PROMPT_REGISTRY
 from model.models import PromptType
 
 class ConversationalRAG:
+    """
+    LCEL-based ConversationalRAG with lazy retriever realization.
+    Usage:
+        rag = ConversationalRAG(session_id="abc")
+        rag.load_retriever_from_faiss(index_path="faiss_index/abc", k=5, index_name="index")
+        answer = rag.invoke("What is ...?", chat_history=[])
+    """
+
     def __init__(self, session_id:Optional[str], retriever=None):
         try:
             self.session_id = session_id
-            log.info(f"Retriever sent from api is {retriever}")
             self.llm = self._load_llm()
             self.contextualize_prompt : ChatPromptTemplate = PROMPT_REGISTRY[PromptType.CONTEXTUAL_QUESTION.value]
+    
             self.qa_prompt : ChatPromptTemplate = PROMPT_REGISTRY[PromptType.CONTEXTUAL_QA.value]
+    
             self.retriever = retriever
             self.chain = None
             if self.retriever is not None:
@@ -39,6 +48,9 @@ class ConversationalRAG:
             index_name:str = "index", 
             search_type: str = "similarity",
             search_kwargs: Optional[Dict[str, Any]] = None):
+        """
+        Load FAISS vectorstore from disk and build retriever + LCEL chain
+        """
         try:
             if not os.path.isdir(index_path):
                 raise FileNotFoundError(f"FAISS index directory not found: {index_path}")
@@ -53,7 +65,10 @@ class ConversationalRAG:
             if search_kwargs is None:
                 search_kwargs = {'k': k}
 
-            self.retriever = vector_store.as_retriever(search_type=search_type, search_kwargs=search_kwargs)
+            self.retriever = vector_store.as_retriever(
+                search_type=search_type, search_kwargs=search_kwargs
+                )
+            
             self._build_lcel_chain()
 
             log.info("FAISS retriever loaded successfully", 
@@ -68,6 +83,9 @@ class ConversationalRAG:
             raise DocumentPortalException("Failed to load retriever", sys)
 
     def invoke(self, user_input:str, chat_history:Optional[List[BaseMessage]]=None) -> str:
+        """
+        Invoke LCEL pipeline.
+        """
         try:
             if self.chain is None:
                 raise DocumentPortalException(
@@ -80,7 +98,12 @@ class ConversationalRAG:
             if not answer:
                 log.warning("No answer generated", session_id=self.session_id, user_input=user_input)
                 return "No answer generated"
-            log.info("Chain invoked successfully", session_id=self.session_id, user_input=user_input, answer_preview=answer[:150])
+            log.info(
+                "Chain invoked successfully", 
+                session_id=self.session_id, 
+                user_input=user_input, 
+                answer_preview=answer[:150],
+                )
             return answer
 
         except Exception as e:
@@ -100,9 +123,9 @@ class ConversationalRAG:
             raise DocumentPortalException("Error loading LLM in ConversationalRAG", sys)
 
     @staticmethod
-    def _format_docs(docs):
+    def _format_docs(docs) -> str:
         try:
-            return "\n\n".join(d.page_content for d in docs)
+            return "\n\n".join(getattr(d, "page_content", str(d)) for d in docs)
         
         except Exception as e:
             raise DocumentPortalException("Error formatting documents in ConversationalRAG", sys)
@@ -134,6 +157,6 @@ class ConversationalRAG:
             log.info("LCEL chain built successfully", session_id=self.session_id)
 
         except Exception as e:
-            log.error(f"Error building LCEL chain in ConversationalRAG {e}")
+            log.error(f"Error building LCEL chain in ConversationalRAG {e}", session_id=self.session_id)
             raise DocumentPortalException("Error building LCEL chain in ConversationalRAG", sys)
 

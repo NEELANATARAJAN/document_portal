@@ -3,7 +3,7 @@ import traceback
 from typing import Optional, cast
 
 class DocumentPortalException(Exception):
-    def __init__(self, error_message, error_details):
+    def __init__(self, error_message, error_details:Optional[object] = None):
         # Normalize the message
         if isinstance(error_message, BaseException):
             norm_msg = str(error_message)
@@ -48,7 +48,7 @@ class DocumentPortalException(Exception):
         return base
 
     def __repr__(self):
-        return f"DocumentPortalException(file={self.file_name!r}, line={self.lineno}, message={self.error_message})"
+        return f"DocumentPortalException(file={self.file_name!r}, line={self.lineno}, message={self.error_message!r})"
 
 # if __name__ == "__main__":
     # Demo 1: Generic exception wrap

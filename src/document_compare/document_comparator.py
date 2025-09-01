@@ -1,7 +1,5 @@
-import os
 import sys
 from pathlib import Path
-import fitz
 from model.models import *
 from prompt.prompt_library import PROMPT_REGISTRY
 from utils.model_loader import ModelLoader
@@ -28,7 +26,7 @@ class DocumentComparatorLLM:
                 "combined_docs": combined_docs,
                 "format_instruction": self.parser.get_format_instructions()
             }
-            log.info("Starting document comparison with inputs", inputs=inputs)
+            log.info("Invoking document comparison LLM chain", inputs=inputs)
 
             response = self.chain.invoke(inputs)
             log.info("Document comparison completed successfully.", response_preview=str(response)[:200])

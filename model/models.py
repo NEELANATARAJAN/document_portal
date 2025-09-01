@@ -5,7 +5,7 @@ from enum import Enum
 class Metadata(BaseModel):
     Summary: List[str]
     Title: str
-    Author: str
+    Author: List[str]
     DateCreated: str
     LastModifiedDate: str
     Publisher: str

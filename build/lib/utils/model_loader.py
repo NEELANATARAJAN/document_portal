@@ -2,7 +2,7 @@ import os
 import sys
 import openai
 from dotenv import load_dotenv
-from logger.custom_logger1 import CustomLogger
+from logger.custom_logger_archive import CustomLogger
 from utils.config_loader import load_config
 from exception.custom_exception_archive import DocumentPortalException
 
