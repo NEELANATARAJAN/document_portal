@@ -6,7 +6,7 @@ def parse_requirements(filename):
         return [
             line.strip()
             for line in f
-            if line.strip() and not line.startswith("#") and not line.endswith("-e")
+            if line.strip() and not line.startswith("#") and not line.endswith("-e .")
         ]
 
 setup(
