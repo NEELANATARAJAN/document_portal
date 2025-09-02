@@ -14,7 +14,7 @@ class ApiKeyManager:
     REQUIRED_KEYS = ["GOOGLE_API_KEY", "GROQ_API_KEY", "OPENAI_API_KEY"]
 
     def __init__(self):
-        self.apikeys = {}
+        self.api_keys = {}
         raw = os.getenv("apikey")
         if raw:
             try:
@@ -22,27 +22,28 @@ class ApiKeyManager:
                 if not isinstance(parsed, dict):
                     raise ValueError("API_KEYS is not a valid JSON object")
                 self.api_keys = parsed
-                log.info("Loaded API Keys from ECS Secret", apikeys=self.apikeys)
+                log.info("Loaded API Keys from ECS Secret", api_keys=self.api_keys)
             except Exception as e:
                 log.warning("Failed to parse API_KEYS as JSON", error=str(e))
 
         for key in self.REQUIRED_KEYS:
-            if not self.apikeys.get(key):
+            if not self.api_keys.get(key):
                 env_val = os.getenv(key)
                 if env_val:
-                    self.apikeys[key] = env_val
+                    self.api_keys[key] = env_val
                     log.info(f"Loaded {key} from individual env var")
         
-        missing = [k for k in self.REQUIRED_KEYS if not self.apikeys.get(k)]
+        missing = [k for k in self.REQUIRED_KEYS if not self.api_keys.get(k)]
         if missing:
             log.error("Missing required API keys", missing_keys=missing)
             raise DocumentPortalException("Missing aPI informations", sys)
     
     def get(self, key:str) -> str:
-        val = self.apikeys.get(key)
+        val = self.api_keys.get(key)
         log.info(f"Get keys called {key}: {val}")
         if not val:
             raise KeyError(f"API key for {key} is missing")
+        return val
 
 
 
@@ -59,7 +60,7 @@ class ModelLoader:
         
         self.api_key_mgr = ApiKeyManager()
         self.config = load_config()
-        log.info("YAML config loaded", config_keys = list(self.config.keys()))
+        log.info("YAML config loaded", config_keys = list(self.config.keys()), api_keys=self.api_key_mgr.get("GOOGLE_API_KEY"))
 #        log.info("YAML config loaded", config_keys = list(self.config.keys()), api_keys = self.api_key_mgr.get('GOOGLE_API_KEY'))
 
 
