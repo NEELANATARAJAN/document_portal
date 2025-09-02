@@ -22,7 +22,7 @@ class ApiKeyManager:
                 if not isinstance(parsed, dict):
                     raise ValueError("API_KEYS is not a valid JSON object")
                 self.api_keys = parsed
-                log.info("Loaded API Keys from ECS Secret")
+                log.info("Loaded API Keys from ECS Secret", api_keys=self.api_keys)
             except Exception as e:
                 log.warning("Failed to parse API_KEYS as JSON", error=str(e))
 
