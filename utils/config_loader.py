@@ -4,7 +4,7 @@ from pathlib import Path
 from logger import GLOBAL_LOGGER as log
 
 def _project_root() -> Path:
-    return Path(__file__).resolve.parents[1]
+    return Path(__file__).resolve().parents[1]
 
 def load_config(config_path: str | None=None) -> dict:
     """
