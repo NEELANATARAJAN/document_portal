@@ -15,7 +15,7 @@ class ApiKeyManager:
 
     def __init__(self):
         self.api_keys = {}
-        raw = os.getenv("APIKEY")
+        raw = os.getenv("apikey")
 
         if raw:
             try:
