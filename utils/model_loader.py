@@ -58,7 +58,7 @@ class ModelLoader:
         
         self.api_key_mgr = ApiKeyManager()
         self.config = load_config()
-        log.info("YAML config loaded", config_keys = list(self.config.keys()), api_keys = list(self.api_key_mgr.get('GOOGLE_API_KEY')))
+        log.info("YAML config loaded", config_keys = list(self.config.keys()), api_keys = self.api_key_mgr.get('GOOGLE_API_KEY'))
 
     def load_embeddings(self):
         """
