@@ -15,7 +15,7 @@ class ApiKeyManager:
 
     def __init__(self):
         self.api_keys = {}
-        raw = os.getenv("API_KEYS")
+        raw = os.getenv("apikey")
         if raw:
             try:
                 parsed = json.loads(raw)
