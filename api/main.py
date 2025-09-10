@@ -4,6 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from fastapi.staticfiles import StaticFiles # type: ignore
 from fastapi.templating import Jinja2Templates # type: ignore
 from typing import Dict, List, Any, Optional
+from datetime import datetime, timedelta
+from jose import jwt # type: ignore
+from langchain.globals import set_llm_cache
+from langchain_community.cache import InMemoryCache
 import os
 from pathlib import Path
 from src.document_analyzer.data_analysis import DocumentAnalyzer
@@ -15,7 +19,14 @@ from src.document_ingestion.data_ingestion import (
 from src.document_compare.document_comparator import DocumentComparatorLLM
 from src.document_chat.retrieval import ConversationalRAG
 from utils.document_ops import read_pdf_via_handler
+from passlib.context import CryptContext
 from logger import GLOBAL_LOGGER as log
+from dotenv import load_dotenv
+
+# load_dotenv()
+
+# Set the global cache
+set_llm_cache(InMemoryCache())
 
 FAISS_BASE = os.getenv("FAISS_BASE", "faiss_index")
 UPLOAD_BASE = os.getenv("UPLOAD_BASE", "data")
@@ -47,17 +58,58 @@ app.add_middleware(
 # app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 # templates=Jinja2Templates(director=str(templates_dir))
 
+users_db = {
+    "admin@example.com": {
+        "username": "admin@example.com",
+        "hashed_password": "$2b$12$11DT78Pv1oTyoSHDVvRR0esLSatxjE7MG.L2JTrZJLhB4apZZYqxS"  # hashed "
+    }
+}
+
+SECRET_KEY = "9yWmOZ9xQcnXxy4nHRmDdMIePtRxlZAgEfVu1R8Oxnb9pJXeInqBJpID8Hd1tYyB"
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+hashed = pwd_context.hash("password123")
+print("Use this hash in your users_db:\n", hashed)
+
+ALGORITHM = "HS256"
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui(request: Request):
     log.info("Serving UI homepage")
-    resp = templates.TemplateResponse("index.html", {"request": request})
-    resp.headers["Cache-Control"] = "no-store"
-    return resp
+    return templates.TemplateResponse("login.html", {"request": request})
+    # # resp = templates.TemplateResponse("index.html", {"request": request})
+    # resp = templates.TemplateResponse(request, "index.html", {"request": request})
+    # resp.headers["Cache-Control"] = "no-store"
+    # return resp
 
 @app.get("/health")
 def health() -> Dict[str, str]:
     log.info("Health Check passed.")
     return {"status": "ok", "service": "document-portal"}
+
+@app.post("/login")
+async def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    user = users_db.get(username)
+    print("Username entered: ", username)
+    print("\n\nUser got: ", user)
+    print("User name:", user["username"] if user else "No user found")
+    print("Password entered: ", password)
+    print("Hashed password: ", user["hashed_password"] if user else "No user found")
+    print("Password verified: ", pwd_context.verify(password, user["hashed_password"]) if user else "No user found")
+    if not user or not pwd_context.verify(password, user["hashed_password"]):
+        log.warning(f"Failed login attempt for user: {username}")
+        return templates.TemplateResponse("login.html", {'request': request, "error": "Invalid credentials"}, status_code=401)    
+    # In a real application, generate and return a JWT token here
+    log.info(f"User {username} logged in successfully.")
+    access_token = jwt.encode(
+        {"sub": username, "exp": datetime.utcnow() + timedelta(hours=1)},
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+    response = templates.TemplateResponse("index.html", {"request": request, "username": username}, status_code=200)
+    response.set_cookie("access_token", access_token)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 class FastAPIFileAdapter:
     """Adapt FastAPI UploadFile -> .name + .getbuffer() API"""
@@ -144,6 +196,7 @@ async def chat_query(
 ):
     try:
         log.info(f"Received chat query: '{question}' | session: {session_id}")
+        start = datetime.utcnow()
         if use_session_dirs and not session_id:
             raise HTTPException(status_code=400, detail="session_id is required when use_session_dirs is True")
         
@@ -159,6 +212,12 @@ async def chat_query(
         # Optional: for now we will pass empty chat history
         response = rag.invoke(question, chat_history=[])
         log.info("Chat query handled successfully")
+        end = datetime.utcnow()
+        duration = (end - start).total_seconds() * 1000
+        log.info(f"\n\n==============Cache comparison =================\n")
+        log.info(f"✅  Response Duration: {duration:.2f} ms\n\n")
+        print(f"\n\n==============Cache comparison =================\n")
+        print(f"✅  Response Duration: {duration:.2f} ms\n\n")
 
         return {
             "answer": response,
@@ -166,6 +225,7 @@ async def chat_query(
             "k": k,
             "engine": "LCEL-RAG",
         }
+
     except HTTPException:
         raise
     except Exception as e:

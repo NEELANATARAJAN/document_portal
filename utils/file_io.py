@@ -8,7 +8,7 @@ from typing import Iterable, List
 from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import DocumentPortalException
 
-SUPPORTED_EXTENSIONS = {'.pdf', '.txt', '.docx'}
+SUPPORTED_EXTENSIONS = {'.pdf', '.txt', '.docx', '.md', '.pptx', '.xlsx', '.csv', '.json', '.html', '.htm'}
 
 def generate_session_id(prefix:str = "session") -> str:
     ist = ZoneInfo("Asia/Kolkata")

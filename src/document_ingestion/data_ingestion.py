@@ -9,6 +9,10 @@ import shutil
 from pathlib import Path
 from typing import Iterable, List, Optional, Dict, Any
 
+import pandas as pd
+from docx import Document as DocxDocument
+from pptx import Presentation
+
 import fitz # type: ignore
 from langchain.schema import Document # type: ignore
 from langchain_text_splitters import RecursiveCharacterTextSplitter # type: ignore
@@ -20,7 +24,8 @@ from exception.custom_exception import DocumentPortalException
 from utils.file_io import generate_session_id, save_uploaded_files
 from utils.document_ops import load_documents, concat_for_analysis, concat_for_compare
 
-SUPPORTED_EXTENSIONS = {'.pdf','.txt','.docx'}
+# SUPPORTED_EXTENSIONS = {'.pdf','.txt','.docx'}
+SUPPORTED_EXTENSIONS = {'.pdf', '.txt', '.docx', '.md', '.pptx', '.xlsx', '.csv', '.json', '.html', '.htm'}
 
 # FAISS Manager (create-or-load)
 
@@ -188,7 +193,8 @@ class DocumentHandler:
     def save_pdf(self, uploaded_file) -> str:
         try:
             filename = os.path.basename(uploaded_file.name)
-            if not filename.lower().endswith('.pdf'):
+            ext = Path(filename).suffix.lower()
+            if ext not in SUPPORTED_EXTENSIONS:
                 raise ValueError("Invalid file type only pdf files are allowed")
             save_path = os.path.join(self.session_path, filename)
             with open(save_path, "wb") as f:
@@ -204,14 +210,49 @@ class DocumentHandler:
 
     def read_pdf(self, pdf_path: str) -> str:
         try:
-            text_chunks = []
-            with fitz.open(pdf_path) as doc:
-                for page_num in range(doc.page_count):
-                    page = doc.load_page(page_num)
-                    text_chunks.append(f"\n-- Page {page_num+1} --\n{page.get_text()}")
-            text = "\n".join(text_chunks)
-            log.info("PDF read successfully.", pdf_path=pdf_path, session_id=self.session_id, pages=len(text_chunks))
-            return text
+            file_path = Path(pdf_path)
+            ext = file_path.suffix.lower()
+            content = ""
+
+            if ext == ".pdf":
+                with fitz.open(file_path) as doc:
+                    parts = [
+                        f"\n-- Page {page_num+1} --\n{doc.load_page(page_num).get_text()}" 
+                        for page_num in range(doc.page_count) if doc.load_page(page_num).get_text().strip()
+                    ]
+                    content = "\n".join(parts)
+            #     text_chunks = []
+            #     with fitz.open(pdf_path) as doc:
+            #         for page_num in range(doc.page_count):
+            #             page = doc.load_page(page_num)
+            #             text_chunks.append(f"\n-- Page {page_num+1} --\n{page.get_text()}")
+            # text = "\n".join(text_chunks)
+            elif ext == ".docx":
+                doc = DocxDocument(str(file_path))
+                parts = [p.text for p in doc.paragraphs if p.text.strip()]
+                content = "\n".join(parts)
+            elif ext == ".pptx":
+                prs = Presentation(str(file_path))
+                parts = []
+                content = "\n".join(
+                    shape.text for slide in prs.slides for shape in slide.shapes if hasattr(shape, "text") and shape.text.strip()
+                )
+            elif ext in {".txt", ".md", ".markdown", ".html", ".htm"}:
+                content = file_path.read_text(encoding="utf-8")
+            elif ext == ".csv":
+                df = pd.read_csv(file_path)
+                content = df.to_string()
+            elif ext == ".xlsx":
+                df = pd.read_excel(file_path)
+                content = df.to_string()
+            elif ext == ".json":
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                content = json.dumps(data, indent=2)
+            else:
+                raise ValueError(f"Unsupported file type: {ext}. Supported types are: {', '.join(SUPPORTED_EXTENSIONS)}")
+            log.info("PDF read successfully.", pdf_path=pdf_path, session_id=self.session_id)
+            return content
         except Exception as e:
             log.error("Failed to read PDF ", error=str(e), pdf_path=pdf_path, session_id=self.session_id)
             raise DocumentPortalException(f"Could not read PDF: {pdf_path}", e) from e
@@ -234,8 +275,10 @@ class DocumentComparator:
             act_path = self.session_path / actual_file.name
 
             for fobj, out in ((reference_file, ref_path), (actual_file, act_path)):
-                if not fobj.name.lower().endswith('.pdf'):
-                    raise ValueError("Invalid File type only PDF files are allowed.")
+                ext = Path(fobj.name).suffix.lower()
+                if ext not in SUPPORTED_EXTENSIONS:
+                    raise ValueError(f"Unsupported file type: {ext}. Supported types are: {', '.join(SUPPORTED_EXTENSIONS)}")
+                
                 with open(out, "wb") as f:
                     if hasattr(fobj, "read"):
                         f.write(fobj.read())
@@ -249,17 +292,52 @@ class DocumentComparator:
 
     def read_pdf(self, pdf_path: Path) -> str:
         try:
-            with fitz.open(pdf_path) as doc:
-                if doc.is_encrypted:
-                    raise ValueError(f"PDF is encrypted: {pdf_path.name}")
-                parts=[]
-                for page_num in range(doc.page_count):
-                    page = doc.load_page(page_num)
-                    text = page.get_text()
-                    if text.strip():
-                        parts.append(f"\n-- Page {page_num+1} --\n{text}")
+            ext = pdf_path.suffix.lower()
+            content = ""
+            if ext == ".pdf":
+                with fitz.open(pdf_path) as doc:
+                    if doc.is_encrypted:
+                        raise ValueError(f"PDF is encrypted: {pdf_path.name}")
+                    parts=[
+                        f"\n-- Page {page_num+1} --\n{doc.load_page(page_num).get_text()}" 
+                        for page_num in range(doc.page_count) if doc.load_page(page_num).get_text().strip()
+                    ]
+                    # for page_num in range(doc.page_count):
+                    #     page = doc.load_page(page_num)
+                    #     text = page.get_text()
+                    #     if text.strip():
+                    #         parts.append(f"\n-- Page {page_num+1} --\n{text}")
+                    content = "\n".join(parts)
+            elif ext == ".docx":
+                from docx import Document
+                doc = Document(str(pdf_path))
+                parts = [p.text for p in doc.paragraphs if p.text.strip()]
+                content = "\n".join(parts)
+            elif ext == ".pptx":
+                from pptx import Presentation
+                prs = Presentation(str(pdf_path))
+                content = "\n".join(
+                    shape.text for slide in prs.slides for shape in slide.shapes if hasattr(shape, "text") and shape.text.strip()
+                )
+            elif ext in {".txt", ".md", ".markdown", ".html", ".htm"}:
+                content = pdf_path.read_text(encoding="utf-8")
+            elif ext == ".csv":
+                import pandas as pd
+                df = pd.read_csv(pdf_path)
+                content = df.to_string()
+            elif ext == ".xlsx":
+                import pandas as pd
+                df = pd.read_excel(pdf_path)
+                content = df.to_string()
+            elif ext == ".json":
+                import json
+                with open(pdf_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                content = json.dumps(data, indent=2)
+            else:
+                raise ValueError(f"Unsupported file type: {ext}. Supported types are: {', '.join(SUPPORTED_EXTENSIONS)}")
             log.info("Files read successfully", file=str(pdf_path), pages=len(parts))
-            return "\n".join(parts)
+            return content
         except Exception as e:
             log.error("Failed to read PDF", file=str(pdf_path), error=str(e))
             raise DocumentPortalException(f"Failed to read PDF", e) from e
@@ -269,9 +347,10 @@ class DocumentComparator:
         try:
             doc_parts = []
             for file in sorted(self.session_path.iterdir()):
-                if file.is_file() and file.suffix.lower() == '.pdf':
+                if file.is_file() and file.suffix.lower() in SUPPORTED_EXTENSIONS:
                     content = self.read_pdf(file)
                     doc_parts.append(f"Document: {file.name}\n{content}")
+            
             combined_text = "\n\n".join(doc_parts)
             log.info("Documents Combined.", count=len(doc_parts), session=self.session_id)
             return combined_text

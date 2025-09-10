@@ -1,0 +1,107 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document Portal - Login</title>
+</head>
+<body>
+    <h2>Login to Document Portal</h2>
+    <form method="POST" action="/login">
+        <label>Email:</label>
+        <input type="text" name="username" required><br><br>
+        <label>Password:</label>
+        <input type="password" name="password" required><br><br>
+        <button type="submit">Login</button>
+    </form>
+    {% if error %}
+    <p style="color:red;">{{ error }}</p>
+    {% endif %}
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document Portal - Login</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h2 {
+            margin-bottom: 30px;
+        }
+
+        form {
+            background-color: #1e1e1e;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 250px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #2a2a2a;
+            color: white;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Login to Document Portal</h2>
+
+    <form method="POST" action="/login">
+        <label for="username">Email:</label>
+        <input type="text" name="username" id="username" required>
+
+        <label for="password">Password:</label>
+        <input type="password" name="password" id="password" required>
+
+        <button type="submit">Login</button>
+
+        {% if error %}
+            <p class="error-message">{{ error }}</p>
+        {% endif %}
+    </form>
+</body>
+</html>

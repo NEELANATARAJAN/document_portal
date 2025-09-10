@@ -16,7 +16,6 @@ class ApiKeyManager:
     def __init__(self):
         self.api_keys = {}
         raw = os.getenv("apikey")
-        log.info(f"APIKEY from raw: {json.loads(raw)}")
 
         if raw:
             try:
@@ -65,7 +64,7 @@ class ModelLoader:
         
         self.api_key_mgr = ApiKeyManager()
         self.config = load_config()
-        log.info("YAML config loaded", config_keys = list(self.config.keys()), api_keys=self.api_key_mgr.get("GOOGLE_API_KEY"))
+        log.info("YAML config loaded", config_keys = list(self.config.keys()))
 #        log.info("YAML config loaded", config_keys = list(self.config.keys()), api_keys = self.api_key_mgr.get('GOOGLE_API_KEY'))
 
 

@@ -6,7 +6,7 @@ from langchain.schema import Document
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import DocumentPortalException
-SUPPORTED_EXTENSIONS = {'.pdf', '.txt', '.docx'}
+SUPPORTED_EXTENSIONS = {'.pdf', '.txt', '.docx', '.md', '.pptx', '.xlsx', '.csv', '.json', '.html', '.htm'}
 
 def load_documents(paths: Iterable[Path]) -> List[Document]:
     """
@@ -22,6 +22,23 @@ def load_documents(paths: Iterable[Path]) -> List[Document]:
                 loader = TextLoader(str(p), encoding="utf-8")
             elif ext == ".docx":
                 loader = Docx2txtLoader(str(p))
+            elif ext in {".md", ".markdown"}:
+                loader = TextLoader(str(p), encoding="utf-8")
+            elif ext in {".pptx"}:
+                from langchain_community.document_loaders import UnstructuredPowerPointLoader
+                loader = UnstructuredPowerPointLoader(str(p))
+            elif ext in {".xlsx"}:
+                from langchain_community.document_loaders import UnstructuredExcelLoader
+                loader = UnstructuredExcelLoader(str(p))
+            elif ext in {".csv"}:
+                from langchain_community.document_loaders import UnstructuredCSVLoader
+                loader = UnstructuredCSVLoader(str(p))
+            elif ext in {".json"}:
+                from langchain_community.document_loaders import UnstructuredJSONLoader
+                loader = UnstructuredJSONLoader(str(p))
+            elif ext in {".html", ".htm"}:
+                from langchain_community.document_loaders import UnstructuredHTMLLoader
+                loader = UnstructuredHTMLLoader(str(p))
             else:
                 log.warning("Unsupported extension file skipped.", path=str(p))
                 continue

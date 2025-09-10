@@ -30,3 +30,10 @@ A Chip manufacturing company procures spare parts from 3rd party vendors. The ch
 2. Compare the invoices and reports
 3. Q&A with reports
 4. Analyze the reports and invoices
+
+DeepEval metrics are used to call out the Answer Relevancy of the LLM models
+
+InMemoryCache is used to 
+1. Reduce the tokens and cost
+2. Reusing previous LLM responses and reduces latency
+3. Speeding up development and testing processes
