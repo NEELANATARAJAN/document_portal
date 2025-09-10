@@ -24,7 +24,7 @@ faiss_index/
 data/
 archive/
 main_archive/
-*.pdf
+# *.pdf
 
 # Secrets & configs
 .env
