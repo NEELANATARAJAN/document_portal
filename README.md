@@ -37,3 +37,17 @@ InMemoryCache is used to
 1. Reduce the tokens and cost
 2. Reusing previous LLM responses and reduces latency
 3. Speeding up development and testing processes
+
+Through cache:
+
+Response time duration for attempt #1 for the query:
+
+==============Cache comparison =================
+
+✅  Response Duration: 8098.39 ms
+
+
+Response time duration for attempt #2 for same query:
+==============Cache comparison =================
+
+✅  Response Duration: 731.48 ms
