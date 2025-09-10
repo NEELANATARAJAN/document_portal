@@ -49,7 +49,7 @@ def test_health():
 
 def test_analyze_documents():
 #    test_file_path = "market_analysis.pdf"
-    with open(str(BASE_DIR, "tests/market_analysis.pdf"),"rb") as pdf_file:
+    with open(str(BASE_DIR / "tests"/ "market_analysis.pdf"),"rb") as pdf_file:
         response = client.post("/analyze", files={"file": ("market_analysis.pdf", pdf_file, "application/pdf")})
     assert response.status_code == 200
     data = response.json()
@@ -60,8 +60,8 @@ def test_analyze_documents():
 
 
 def test_compare_documents():
-    ref_path = str(BASE_DIR, "/tests/Long_Report_V1.pdf")
-    act_path = str(BASE_DIR,"/tests/Long_Report_V2.pdf")
+    ref_path = str(BASE_DIR / "tests"/ "Long_Report_V1.pdf")
+    act_path = str(BASE_DIR / "tests"/ "Long_Report_V2.pdf")
     with open(ref_path,"rb") as ref_file, open(act_path,"rb") as act_file:
         response = client.post("/compare", files={"reference": ("Long_Report_V1.pdf", ref_file, "application/pdf"), "actual": ("Long_Report_V2.pdf", act_file, "application/pdf")})
     assert response.status_code == 200
@@ -86,7 +86,7 @@ chunk_overlap=300
 k=5
 
 def test_chat_ingestor():
-    files = str(BASE_DIR,"/tests/market_analysis.pdf")
+    files = str(BASE_DIR / "tests"/ "market_analysis.pdf")
     with open(files,"rb") as f:
         file_content = f.read()
 
@@ -108,7 +108,7 @@ def test_chat_ingestor():
     assert retriever.search_kwargs["k"] == k
 
 def test_chat_query():
-    files = str(BASE_DIR,"/tests/market_analysis.pdf")
+    files = str(BASE_DIR / "tests"/ "market_analysis.pdf")
     with open(files,"rb") as f:
         file_content = f.read()
 
@@ -153,7 +153,7 @@ def test_chat_query():
 @pytest.mark.asyncio
 async def test_chat_query_with_deepeval():
     # --- Load test file ---
-    file_path = str(BASE_DIR,"/tests/market_analysis.pdf")
+    file_path = str(BASE_DIR / "tests"/ "market_analysis.pdf")
     with open(file_path, "rb") as f:
         file_content = f.read()
 
